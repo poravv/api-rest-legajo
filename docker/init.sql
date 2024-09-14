@@ -91,5 +91,5 @@ CREATE TABLE asesor (
     nombre TEXT,
     apellido TEXT,
     estado TEXT,
-    idusuario varchar(100),
+    idusuario varchar(100)
 );
