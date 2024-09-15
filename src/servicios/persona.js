@@ -32,6 +32,41 @@ routes.get('/getsql/', keycloak.protect(), async (req, res) => {
         });
 })
 
+routes.get('/getagendamiento/', keycloak.protect(), async (req, res) => {
+    const token = req.kauth.grant.access_token;
+    const authData = token.content;
+
+    // Formato de fecha con Sequelize (año-mes-día)
+    const strFecha = `${fechaActual.getFullYear()}-${(fechaActual.getMonth() + 1).toString().padStart(2, '0')}-${fechaActual.getDate().toString().padStart(2, '0')}`;
+
+    await persona.findAll({
+        where: {
+            estado: 'AG',
+            fecha_agendamiento: {
+                [Op.lte]: strFecha // Menor o igual a la fecha actual
+            }
+        },
+        include: [
+            { model: ciudad },
+            { model: legajo },
+            { model: asesor }
+        ]
+    }).then((response) => {
+        res.json({
+            mensaje: "successfully",
+            authData: authData,
+            body: response
+        });
+    }).catch(error => {
+        res.json({
+            mensaje: "error",
+            error: error,
+            detmensaje: `Error en el servidor, ${error}`
+        });
+    });
+
+})
+
 routes.get('/likePersona/:documento', keycloak.protect(), async (req, res) => {
     const token = req.kauth.grant.access_token;
     const authData = token.content;
@@ -115,30 +150,30 @@ routes.get('/getForAsesor/', keycloak.protect(), async (req, res) => {
         if (!page || !limit) {
             // Si no se especifican page y limit, obtener todos los registros
             response = await persona.findAll({
-                
-                include: [{ model: ciudad }, { model: legajo }, 
-                    {
-                        model: asesor,
-                        where: {
-                            idusuario: {
-                                [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
-                            }
+
+                include: [{ model: ciudad }, { model: legajo },
+                {
+                    model: asesor,
+                    where: {
+                        idusuario: {
+                            [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
                         }
                     }
+                }
                 ]
             });
         } else {
             // Realizar la consulta con paginación
             response = await persona.findAndCountAll({
                 include: [{ model: ciudad }, { model: legajo },
-                    {
-                        model: asesor,
-                        where: {
-                            idusuario: {
-                                [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
-                            }
+                {
+                    model: asesor,
+                    where: {
+                        idusuario: {
+                            [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
                         }
                     }
+                }
                 ],
                 limit: limit,
                 offset: offset

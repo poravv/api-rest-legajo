@@ -23,7 +23,7 @@ const persona = database.define("persona",{
         allowNull:false
     },
     nacimiento:{
-        type:DataTypes.DATE,
+        type:DataTypes.STRING,
         allowNull:false
     },
     sexo:{
@@ -78,6 +78,9 @@ const persona = database.define("persona",{
     photo:{
         type:DataTypes.BLOB,
         foreignKey:true
+    },
+    fecha_agendamiento: {
+        type:DataTypes.DATE
     },
 },
 {
