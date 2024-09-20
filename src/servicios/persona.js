@@ -36,14 +36,11 @@ routes.get('/getagendamiento/', keycloak.protect(), async (req, res) => {
     const token = req.kauth.grant.access_token;
     const authData = token.content;
 
-    // Formato de fecha con Sequelize (año-mes-día)
-    const strFecha = `${fechaActual.getFullYear()}-${(fechaActual.getMonth() + 1).toString().padStart(2, '0')}-${fechaActual.getDate().toString().padStart(2, '0')}`;
-
     await persona.findAll({
         where: {
             estado: 'AG',
             fecha_agendamiento: {
-                [Op.lte]: strFecha // Menor o igual a la fecha actual
+                [Op.lte]: Sequelize.fn('CURDATE') // Menor o igual a la fecha actual
             }
         },
         include: [
