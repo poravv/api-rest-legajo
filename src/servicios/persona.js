@@ -108,7 +108,7 @@ routes.get('/get/', keycloak.protect(), async (req, res) => {
         } else {
             // Realizar la consulta con paginación
             response = await persona.findAndCountAll({
-                include: [{ model: ciudad }, { model: legajo }],
+                include: [{ model: ciudad }, { model: legajo }, { model: asesor }],
                 limit: limit,
                 offset: offset
             });
@@ -148,7 +148,7 @@ routes.get('/getForAsesor/', keycloak.protect(), async (req, res) => {
             // Si no se especifican page y limit, obtener todos los registros
             response = await persona.findAll({
 
-                include: [{ model: ciudad }, { model: legajo },
+                include: [{ model: ciudad }, { model: legajo },{ model: asesor },
                 {
                     model: asesor,
                     where: {
