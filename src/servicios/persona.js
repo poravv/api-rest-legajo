@@ -122,7 +122,7 @@ routes.get('/get/', keycloak.protect(), async (req, res) => {
                 totalPages: Math.ceil(response.count / limit),
                 currentPage: page,
                 pageSize: limit
-            } : undefined
+            } : undefined 
         });
     } catch (error) {
         res.json({
