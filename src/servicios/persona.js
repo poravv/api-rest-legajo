@@ -122,7 +122,7 @@ routes.get('/get/', keycloak.protect(), async (req, res) => {
                 totalPages: Math.ceil(response.count / limit),
                 currentPage: page,
                 pageSize: limit
-            } : undefined 
+            } : undefined
         });
     } catch (error) {
         res.json({
@@ -148,7 +148,7 @@ routes.get('/getForAsesor/', keycloak.protect(), async (req, res) => {
             // Si no se especifican page y limit, obtener todos los registros
             response = await persona.findAll({
 
-                include: [{ model: ciudad }, { model: legajo },{ model: asesor },
+                include: [{ model: ciudad }, { model: legajo }, { model: asesor },
                 {
                     model: asesor,
                     where: {
@@ -195,6 +195,133 @@ routes.get('/getForAsesor/', keycloak.protect(), async (req, res) => {
         });
     }
 });
+
+routes.get('/gesDay/', keycloak.protect(), async (req, res) => {
+    try {
+        const token = req.kauth.grant.access_token;
+        const authData = token.content;
+
+        // Obtener los parámetros de paginación y fecha de la solicitud
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0];
+
+        const queryOptions = {
+            include: [{ model: ciudad }, { model: legajo }, { model: asesor }],
+            where: {
+                fecha_insert: {
+                    [Op.between]: [
+                        new Date(fecha_insert + 'T00:00:00Z'),
+                        new Date(fecha_insert + 'T23:59:59Z')
+                    ]
+                }
+            }
+        };
+
+        let response;
+
+        if (!page || !limit) {
+            response = await persona.findAll(queryOptions);
+        } else {
+            response = await persona.findAndCountAll({
+                ...queryOptions,
+                limit: limit,
+                offset: offset
+            });
+        }
+
+        res.json({
+            mensaje: "successfully",
+            authData: authData,
+            body: response.rows || response,
+            pagination: response.count ? {
+                totalItems: response.count,
+                totalPages: Math.ceil(response.count / limit),
+                currentPage: page,
+                pageSize: limit
+            } : undefined
+        });
+    } catch (error) {
+        console.error("Error en la consulta:", error);
+        res.json({
+            mensaje: "error",
+            error: error.message,
+            detmensaje: `Error en el servidor, ${error}`
+        });
+    }
+});
+
+routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
+    try {
+        const token = req.kauth.grant.access_token;
+        const authData = token.content;
+
+        // Obtener los parámetros de paginación y fecha de la solicitud
+        const page = parseInt(req.query.page) || 1; // Valor predeterminado
+        const limit = parseInt(req.query.limit) || 10; // Valor predeterminado
+        const offset = (page - 1) * limit;
+        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0]; // Fecha actual si no se especifica
+
+
+        const queryOptions = {
+            include: [
+                { model: ciudad },
+                { model: legajo },
+                {
+                    model: asesor,
+                    where: {
+                        idusuario: {
+                            [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
+                        }
+                    }
+                }
+            ],
+            where: {
+                fecha_insert: {
+                    [Op.between]: [
+                        new Date(fecha_insert + 'T00:00:00Z'),
+                        new Date(fecha_insert + 'T23:59:59Z')
+                    ]
+                }
+            }
+        };
+
+        let response;
+        if (!page || !limit) {
+            // Si no se especifican page y limit, obtener todos los registros
+            response = await persona.findAll(queryOptions);
+        } else {
+            // Realizar la consulta con paginación
+            response = await persona.findAndCountAll({
+                ...queryOptions,
+                limit: limit,
+                offset: offset
+            });
+        }
+
+        res.json({
+            mensaje: "successfully",
+            authData: authData,
+            body: response.rows || response,
+            pagination: response.count ? {
+                totalItems: response.count,
+                totalPages: Math.ceil(response.count / limit),
+                currentPage: page,
+                pageSize: limit
+            } : undefined
+        });
+    } catch (error) {
+        console.error("Error en la consulta:", error);
+        res.json({
+            mensaje: "error",
+            error: error.message,
+            detmensaje: `Error en el servidor, ${error}`
+        });
+    }
+});
+
+
 
 routes.get('/get/:idpersona', keycloak.protect(), async (req, res) => {
     const token = req.kauth.grant.access_token;
