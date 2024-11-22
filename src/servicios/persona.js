@@ -64,30 +64,103 @@ routes.get('/getagendamiento/', keycloak.protect(), async (req, res) => {
 
 })
 
-routes.get('/likePersona/:documento', keycloak.protect(), async (req, res) => {
+routes.get('/likePersona', keycloak.protect(), async (req, res) => {
     const token = req.kauth.grant.access_token;
     const authData = token.content;
-    await persona.findAll({
-        where: {
-            documento: {
-                [Op.like]: `${req.params.documento}%`
-            }
-        },
-        include: [{ model: ciudad }, { model: legajo }, { model: asesor }]
-    }).then((response) => {
+
+    // Obtener los parámetros de paginación de la solicitud
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10; // Valores predeterminados si no se proporcionan
+    const offset = (page - 1) * limit;
+
+    try {
+        const response = await persona.findAndCountAll({
+            where: {
+                documento: {
+                    [Op.like]: `${req.query.documento}%`
+                }
+            },
+            include: [
+                { model: ciudad },
+                { model: legajo },
+                { model: asesor }
+            ],
+            limit: limit,
+            offset: offset
+        });
+
         res.json({
             mensaje: "successfully",
             authData: authData,
-            body: response
+            body: response.rows,
+            pagination: {
+                totalItems: response.count,
+                totalPages: Math.ceil(response.count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
         });
-    }).catch(error => {
+    } catch (error) {
         res.json({
             mensaje: "error",
             error: error,
             detmensaje: `Error en el servidor, ${error}`
         });
-    });
-})
+    }
+});
+
+
+routes.get('/likePersonaAsesor', keycloak.protect(), async (req, res) => {
+    const token = req.kauth.grant.access_token;
+    const authData = token.content;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10; // Default values if not provided
+    const offset = (page - 1) * limit;
+
+    try {
+        const response = await persona.findAndCountAll({
+            where: {
+                documento: {
+                    [Op.like]: `${req.query.documento}%`
+                }
+            },
+            include: [
+                { model: ciudad },
+                { model: legajo },
+                {
+                    model: asesor,
+                    where: {
+                        idusuario: {
+                            [Op.eq]: authData.sub // Usamos authData.sub para el filtro de asesor
+                        }
+                    }
+                }
+            ],
+            limit: limit,
+            offset: offset
+        });
+
+        res.json({
+            mensaje: "successfully",
+            authData: authData,
+            body: response.rows,
+            pagination: {
+                totalItems: response.count,
+                totalPages: Math.ceil(response.count / limit),
+                currentPage: page,
+                pageSize: limit
+            }
+        });
+    } catch (error) {
+        res.json({
+            mensaje: "error",
+            error: error,
+            detmensaje: `Error en el servidor, ${error}`
+        });
+    }
+});
+
 
 routes.get('/get/', keycloak.protect(), async (req, res) => {
     const token = req.kauth.grant.access_token;
@@ -205,15 +278,19 @@ routes.get('/gesDay/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0];
+        const fecha_desde = req.query.fecha_insert || new Date();
+        const fecha_hasta = req.query.fecha_insert || new Date();
+
+        fecha_desde.setHours(0, 0, 0, 0);
+        fecha_hasta.setHours(23, 59, 59, 999);
 
         const queryOptions = {
             include: [{ model: ciudad }, { model: legajo }, { model: asesor }],
             where: {
                 fecha_insert: {
                     [Op.between]: [
-                        new Date(fecha_insert + 'T00:00:00Z'),
-                        new Date(fecha_insert + 'T23:59:59Z')
+                        new Date(fecha_desde),
+                        new Date(fecha_hasta)
                     ]
                 }
             }
@@ -261,7 +338,11 @@ routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1; // Valor predeterminado
         const limit = parseInt(req.query.limit) || 10; // Valor predeterminado
         const offset = (page - 1) * limit;
-        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0]; // Fecha actual si no se especifica
+        const fecha_desde = req.query.fecha_insert || new Date();
+        const fecha_hasta = req.query.fecha_insert || new Date();
+
+        fecha_desde.setHours(0, 0, 0, 0);
+        fecha_hasta.setHours(23, 59, 59, 999);
 
 
         const queryOptions = {
@@ -280,8 +361,8 @@ routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
             where: {
                 fecha_insert: {
                     [Op.between]: [
-                        new Date(fecha_insert + 'T00:00:00Z'),
-                        new Date(fecha_insert + 'T23:59:59Z')
+                        new Date(fecha_desde),
+                        new Date(fecha_hasta)
                     ]
                 }
             }

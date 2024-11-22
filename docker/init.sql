@@ -94,3 +94,5 @@ CREATE TABLE asesor (
     estado TEXT,
     idusuario varchar(100)
 );
+
+CREATE INDEX idx_fecha_insert ON Persona(fecha_insert);

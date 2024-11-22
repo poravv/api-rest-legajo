@@ -8,7 +8,12 @@ const sequelize = new Sequelize(process.env.DB_DATABASE,process.env.DB_USER,proc
     port:process.env.DB_PORT,
     host:process.env.DB_HOST,
     database: process.env.DB_DATABASE,
-    insecureAuth: true
+    insecureAuth: true,
+    timezone: 'America/Asuncion', // Configura la zona horaria 
+    dialectOptions: 
+    { 
+        timezone: 'Z', // Ajuste adicional para MySQL 
+    },
 })
 
 module.exports=sequelize
