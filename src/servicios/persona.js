@@ -7,10 +7,10 @@ const e = require('express');
 const { keycloak } = require('../middleware/keycloak_validate');
 const { QueryTypes } = require('sequelize');
 require("dotenv").config()
-let fechaActual = new Date();
 const Sequelize = require('sequelize');
 const legajo = require('../model/model_legajo');
 const asesor = require('../model/model_asesor');
+const moment = require('moment-timezone');
 const Op = Sequelize.Op;
 
 routes.get('/getsql/', keycloak.protect(), async (req, res) => {
@@ -278,11 +278,12 @@ routes.get('/gesDay/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-        const fecha_desde = req.query.fecha_insert || new Date();
-        const fecha_hasta = req.query.fecha_insert || new Date();
+        const fecha_insert = req.query.fecha_insert || moment().tz('America/Asuncion').format('YYYY-MM-DD');
+        const fecha_desde = moment(fecha_insert).tz('America/Asuncion').startOf('day').toDate();
+        const fecha_hasta = moment(fecha_insert).tz('America/Asuncion').endOf('day').toDate();
 
-        fecha_desde.setHours(0, 0, 0, 0);
-        fecha_hasta.setHours(23, 59, 59, 999);
+        console.log(fecha_desde);
+        console.log(fecha_hasta);
 
         const queryOptions = {
             include: [{ model: ciudad }, { model: legajo }, { model: asesor }],
@@ -338,11 +339,12 @@ routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1; // Valor predeterminado
         const limit = parseInt(req.query.limit) || 10; // Valor predeterminado
         const offset = (page - 1) * limit;
-        const fecha_desde = req.query.fecha_insert || new Date();
-        const fecha_hasta = req.query.fecha_insert || new Date();
+        const fecha_insert = req.query.fecha_insert || moment().tz('America/Asuncion').format('YYYY-MM-DD');
+        const fecha_desde = moment(fecha_insert).tz('America/Asuncion').startOf('day').toDate();
+        const fecha_hasta = moment(fecha_insert).tz('America/Asuncion').endOf('day').toDate();
 
-        fecha_desde.setHours(0, 0, 0, 0);
-        fecha_hasta.setHours(23, 59, 59, 999);
+        console.log(fecha_desde);
+        console.log(fecha_hasta);
 
 
         const queryOptions = {
@@ -457,7 +459,9 @@ routes.post('/post/', keycloak.protect(), async (req, res) => {
     try {
         const token = req.kauth.grant.access_token;
         const authData = token.content;
-        const strFecha = fechaActual.getFullYear() + "-" + (fechaActual.getMonth() + 1) + "-" + fechaActual.getDate();
+        const fechaActual = moment().tz('America/Asuncion');
+        const strFecha = fechaActual.format('YYYY-MM-DD');
+
         req.body.fecha_insert = strFecha;
         req.body.fecha_upd = strFecha;
         req.body.idusuario_upd = authData.sub;
@@ -505,7 +509,9 @@ routes.put('/put/:idpersona', keycloak.protect(), async (req, res) => {
     try {
         const token = req.kauth.grant.access_token;
         const authData = token.content;
-        const strFecha = fechaActual.getFullYear() + "-" + (fechaActual.getMonth() + 1) + "-" + fechaActual.getDate();
+        const fechaActual = moment().tz('America/Asuncion');
+        const strFecha = fechaActual.format('YYYY-MM-DD');
+
         req.body.fecha_upd = strFecha;
         req.body.idusuario_upd = authData.sub;
         await persona.update(req.body, { where: { idpersona: req.params.idpersona }, transaction: t })
