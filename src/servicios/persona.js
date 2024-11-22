@@ -7,10 +7,10 @@ const e = require('express');
 const { keycloak } = require('../middleware/keycloak_validate');
 const { QueryTypes } = require('sequelize');
 require("dotenv").config()
+let fechaActual = new Date();
 const Sequelize = require('sequelize');
 const legajo = require('../model/model_legajo');
 const asesor = require('../model/model_asesor');
-const moment = require('moment-timezone');
 const Op = Sequelize.Op;
 
 routes.get('/getsql/', keycloak.protect(), async (req, res) => {
@@ -278,20 +278,16 @@ routes.get('/gesDay/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
-        const fecha_insert = req.query.fecha_insert || moment().tz('America/Asuncion').format('YYYY-MM-DD');
-        const fecha_desde = moment(fecha_insert).tz('America/Asuncion').startOf('day').toDate();
-        const fecha_hasta = moment(fecha_insert).tz('America/Asuncion').endOf('day').toDate();
+        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0];
 
-        console.log(fecha_desde);
-        console.log(fecha_hasta);
-
+        
         const queryOptions = {
             include: [{ model: ciudad }, { model: legajo }, { model: asesor }],
             where: {
                 fecha_insert: {
                     [Op.between]: [
-                        new Date(fecha_desde),
-                        new Date(fecha_hasta)
+                        new Date(fecha_insert + 'T00:00:00Z'),
+                        new Date(fecha_insert + 'T23:59:59Z')
                     ]
                 }
             }
@@ -339,12 +335,7 @@ routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
         const page = parseInt(req.query.page) || 1; // Valor predeterminado
         const limit = parseInt(req.query.limit) || 10; // Valor predeterminado
         const offset = (page - 1) * limit;
-        const fecha_insert = req.query.fecha_insert || moment().tz('America/Asuncion').format('YYYY-MM-DD');
-        const fecha_desde = moment(fecha_insert).tz('America/Asuncion').startOf('day').toDate();
-        const fecha_hasta = moment(fecha_insert).tz('America/Asuncion').endOf('day').toDate();
-
-        console.log(fecha_desde);
-        console.log(fecha_hasta);
+        const fecha_insert = req.query.fecha_insert || new Date().toISOString().split('T')[0]; // Fecha actual si no se especifica
 
 
         const queryOptions = {
@@ -363,8 +354,8 @@ routes.get('/gesDayForAsesor/', keycloak.protect(), async (req, res) => {
             where: {
                 fecha_insert: {
                     [Op.between]: [
-                        new Date(fecha_desde),
-                        new Date(fecha_hasta)
+                        new Date(fecha_insert + 'T00:00:00Z'),
+                        new Date(fecha_insert + 'T23:59:59Z')
                     ]
                 }
             }
@@ -459,9 +450,7 @@ routes.post('/post/', keycloak.protect(), async (req, res) => {
     try {
         const token = req.kauth.grant.access_token;
         const authData = token.content;
-        const fechaActual = moment().tz('America/Asuncion');
-        const strFecha = fechaActual.format('YYYY-MM-DD');
-
+        const strFecha = fechaActual.getFullYear() + "-" + (fechaActual.getMonth() + 1) + "-" + fechaActual.getDate();
         req.body.fecha_insert = strFecha;
         req.body.fecha_upd = strFecha;
         req.body.idusuario_upd = authData.sub;
@@ -509,9 +498,7 @@ routes.put('/put/:idpersona', keycloak.protect(), async (req, res) => {
     try {
         const token = req.kauth.grant.access_token;
         const authData = token.content;
-        const fechaActual = moment().tz('America/Asuncion');
-        const strFecha = fechaActual.format('YYYY-MM-DD');
-
+        const strFecha = fechaActual.getFullYear() + "-" + (fechaActual.getMonth() + 1) + "-" + fechaActual.getDate();
         req.body.fecha_upd = strFecha;
         req.body.idusuario_upd = authData.sub;
         await persona.update(req.body, { where: { idpersona: req.params.idpersona }, transaction: t })
