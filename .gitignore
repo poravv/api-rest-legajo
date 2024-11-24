@@ -15,6 +15,7 @@ docker-compose-dolce.yml
 docker-compose-dolce-back.yml
 docker-compose-slave.yml
 my.cnf
+docker-compose-db.yml
 
 node_modules
 # Ignorar archivos de entorno
