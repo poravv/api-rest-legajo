@@ -1,43 +1,19 @@
-const { Sequelize } = require("sequelize");
-require("dotenv").config();
+const {Sequelize}=require("sequelize")
+require("dotenv").config()
 
-const masterConfig = {
+const sequelize = new Sequelize(process.env.DB_DATABASE,process.env.DB_USER,process.env.DB_PASSWORD,{
+    dialect:'mysql',
+    username:process.env.DB_USER,
+    password:process.env.DB_PASSWORD,
+    port:process.env.DB_PORT,
+    host:process.env.DB_HOST,
     database: process.env.DB_DATABASE,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'mariadb',
     insecureAuth: true,
-    timezone: 'America/Asuncion',
-    dialectOptions: { timezone: 'Z' },
-};
-
-const slaveConfigs = [
-    {
-        host: process.env.DB_SLAVE1_HOST,
-        port: process.env.DB_SLAVE1_PORT
+    timezone: 'America/Asuncion', // Configura la zona horaria 
+    dialectOptions: 
+    { 
+        timezone: 'Z', // Ajuste adicional para MySQL 
     },
-    {
-        host: process.env.DB_SLAVE2_HOST,
-        port: process.env.DB_SLAVE2_PORT
-    },
-    {
-        host: process.env.DB_SLAVE3_HOST,
-        port: process.env.DB_SLAVE3_PORT
-    }
-].map(config => ({
-    ...masterConfig,
-    host: config.host,
-    port: config.port
-}));
+})
 
-const sequelize = new Sequelize({
-    ...masterConfig,
-    replication: {
-        read: slaveConfigs,
-        write: masterConfig
-    }
-});
-
-module.exports = sequelize;
+module.exports=sequelize
