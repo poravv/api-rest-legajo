@@ -35,7 +35,7 @@ app.use(configrutas)
 
 //Rutas --------------------------------
 app.get('/',(req,res)=>{
-    res.send('Api Rest vendelo')
+    res.send('Api Rest Legajo')
 });
 
 //Server Running ----------------------
